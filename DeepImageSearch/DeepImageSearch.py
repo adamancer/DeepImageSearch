@@ -226,30 +226,46 @@ class Search_Setup:
         number_of_images : int, optional (default=6)
             The number of most similar images to the query image to be plotted.
         """
-        input_img = Image.open(image_path)
-        input_img_resized = ImageOps.fit(input_img, (224, 224), Image.LANCZOS)
-        plt.figure(figsize=(5, 5))
-        plt.axis('off')
-        plt.title('Input Image', fontsize=18)
-        plt.imshow(input_img_resized)
-        plt.show()
-
+        img = Image.open(image_path)
+        img.thumbnail((448, 448), Image.LANCZOS)
+        
         query_vector = self._get_query_vector(image_path)
         img_list = list(self._search_by_vector(query_vector, number_of_images).values())
+        row_size = 5
+        rows = []
+        while img_list:
+            rows.append(img_list[:row_size])
+            img_list = img_list[row_size:]
 
-        grid_size = math.ceil(math.sqrt(number_of_images))
-        axes = []
-        fig = plt.figure(figsize=(20, 15))
-        for a in range(number_of_images):
-            axes.append(fig.add_subplot(grid_size, grid_size, a + 1))
-            plt.axis('off')
-            img = Image.open(img_list[a])
-            img_resized = ImageOps.fit(img, (224, 224), Image.LANCZOS)
-            plt.imshow(img_resized)
-        fig.tight_layout()
-        fig.subplots_adjust(top=0.93)
-        fig.suptitle('Similar Result Found', fontsize=22)
-        plt.show(fig)
+        fig = plt.figure(figsize=(4.48 * 3, 2 * len(rows)), dpi=100)
+        outer = gridspec.GridSpec(1, 2, width_ratios=(1, 2), wspace=0.1)
+        
+        # Show search image
+        main = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=outer[0])
+        ax = plt.Subplot(fig, main[0])
+        ax.imshow(img)
+        ax.set_title("Query Image")
+        ax.axis('off')
+        fig.add_subplot(ax)
+        
+        gallery = gridspec.GridSpecFromSubplotSpec(
+            len(rows),
+            len(rows[0]),
+            subplot_spec=outer[1],
+        )
+        i = 0
+        for row in rows:
+            for path in row:
+                ax = plt.Subplot(fig, gallery[i])
+                img = Image.open(path)
+                img.thumbnail((224, 224), Image.LANCZOS)
+                ax.set_title(f"{i + 1}.")
+                ax.imshow(img)
+                ax.axis('off')
+                fig.add_subplot(ax)
+                i += 1
+        
+        fig.show()
 
     def get_similar_images(self, image_path: str, number_of_images: int = 10):
         """
