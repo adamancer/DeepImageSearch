@@ -87,8 +87,6 @@ def main(args=None):
         df = st.get_image_metadata_file()
         paths = set(df["images_paths"])
         new_images = [p for p in images if p not in paths]
-        print(paths)
-        print(new_images)
         if limit:
             new_images = new_images[:limit]
         if new_images:
