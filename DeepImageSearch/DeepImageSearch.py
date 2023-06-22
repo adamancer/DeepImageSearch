@@ -208,6 +208,27 @@ class Search_Setup:
 
         print(f"\033[92m New images added to the index: {len(new_image_paths)}")
 
+    def remove_images_from_index(self, ids: list):
+        """
+        Removes new images from the existing index.
+
+        Parameters:
+        -----------
+        ids : list
+            A list of ids for the images to be removed. Currently these are hashes
+            of the filepath with PYTHONHASHSEED=0.
+        """
+        image_data = self.get_image_metadata_file()
+        index = self.get_image_index_file()
+        
+        image_data = image_data[~image_data.id.isin(ids)]
+        index.remove_ids(faiss.IDSelectorBatch(ids))
+        
+        image_data.to_pickle(config.image_data_with_features_pkl(self.model_name))
+        faiss.write_index(index, config.image_features_vectors_idx(self.model_name))
+
+        self.image_data = image_data
+
     def _search_by_vector(self, v, n: int):
         self.v = v
         self.n = n
