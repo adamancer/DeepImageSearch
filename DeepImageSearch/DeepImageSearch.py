@@ -1,6 +1,7 @@
 import DeepImageSearch.config as config
 import os
 import pandas as pd
+import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from PIL import Image
 from tqdm import tqdm
