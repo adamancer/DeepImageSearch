@@ -13,6 +13,9 @@ from PIL import ImageOps
 import math
 import faiss
 
+if hash("test") != 4418353137104490830:
+    raise ValueError("PYTHONHASHSEED must be set to 0")
+
 class Load_Data:
     """A class for loading data from single/multiple folders or a CSV file"""
 
@@ -129,6 +132,7 @@ class Search_Setup:
 
     def _start_feature_extraction(self):
         image_data = pd.DataFrame()
+        image_data['id'] = [hash(p) for p in self.image_list]
         image_data['images_paths'] = self.image_list
         f_data = self._get_feature(self.image_list)
         image_data['features'] = f_data
@@ -141,9 +145,10 @@ class Search_Setup:
         self.image_data = image_data
         d = len(image_data['features'][0])  # Length of item vector that will be indexed
         self.d = d
-        index = faiss.IndexFlatL2(d)
+        index = faiss.IndexIDMap(faiss.IndexFlatL2(d))
         features_matrix = np.vstack(image_data['features'].values).astype(np.float32)
-        index.add(features_matrix)  # Add the features matrix to the index
+        id_matrix = image_data['id']
+        index.add_with_ids(features_matrix, id_matrix)  # Add the features matrix to the index
         faiss.write_index(index, config.image_features_vectors_idx(self.model_name))
         print("\033[94m Saved The Indexed File:" + f"[metadata-files/{self.model_name}/image_features_vectors.idx]")
 
@@ -189,12 +194,13 @@ class Search_Setup:
                 continue
 
             # Add the new image to the metadata
-            new_metadata = pd.DataFrame({"images_paths": [new_image_path], "features": [feature]})
+            img_id = hash(new_image_path)
+            new_metadata = pd.DataFrame({"id": img_id, "images_paths": [new_image_path], "features": [feature]})
             #self.image_data = self.image_data.append(new_metadata, ignore_index=True)
-            self.image_data  =pd.concat([self.image_data, new_metadata], axis=0, ignore_index=True)
+            self.image_data = pd.concat([self.image_data, new_metadata], axis=0, ignore_index=True)
 
             # Add the new image to the index
-            index.add(np.array([feature], dtype=np.float32))
+            index.add_with_ids(np.array([feature], dtype=np.float32), [img_id])
 
         # Save the updated metadata and index
         self.image_data.to_pickle(config.image_data_with_features_pkl(self.model_name))
@@ -207,7 +213,8 @@ class Search_Setup:
         self.n = n
         index = faiss.read_index(config.image_features_vectors_idx(self.model_name))
         D, I = index.search(np.array([self.v], dtype=np.float32), self.n)
-        return dict(zip(I[0], self.image_data.iloc[I[0]]['images_paths'].to_list()))
+        matches = self.image_data[self.image_data['id'].isin(I[0])]['images_paths'].to_list()
+        return dict(zip(I[0], matches))
 
     def _get_query_vector(self, image_path: str):
         self.image_path = image_path
