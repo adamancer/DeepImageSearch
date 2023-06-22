@@ -1,0 +1,11 @@
+name: dims
+channels:
+- conda-forge
+- default
+dependencies:
+- python>=3.11
+- pip
+- pip:
+  - DeepImageSearch
+variables:
+  PYTHONHASHSEED: 0
