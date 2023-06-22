@@ -22,7 +22,7 @@ class Load_Data:
         """
         pass
     
-    def from_folder(self, folder_list: list):
+    def from_folder(self, folder_list: list, exts: tuple = ('.bmp', '.gif', '.png', '.jpg', '.jpeg', '.tif', '.tiff')):
         """
         Adds images from the specified folders to the image_list.
 
@@ -31,13 +31,15 @@ class Load_Data:
         folder_list : list
             A list of paths to the folders containing images to be added to the image_list.
         """
+        if isinstance(folder_list, str):
+            folder_list = [folder_list]
         self.folder_list = folder_list
         image_path = []
         for folder in self.folder_list:
             for root, dirs, files in os.walk(folder):
-                for file in files:
-                    if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
-                        image_path.append(os.path.join(root, file))
+                for fn in files:
+                    if fn.lower().endswith(exts):
+                        image_path.append(os.path.join(root, fn))
         return image_path
 
     def from_csv(self, csv_file_path: str, images_column_name: str):
