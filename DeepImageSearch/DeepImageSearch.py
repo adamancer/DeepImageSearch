@@ -283,6 +283,7 @@ class Search_Setup:
         query_vector = self._get_query_vector(self.image_path)
         img_dict = self._search_by_vector(query_vector, self.number_of_images)
         return img_dict
+    
     def get_image_metadata_file(self):
         """
         Returns the metadata file containing information about the indexed images.
@@ -294,3 +295,14 @@ class Search_Setup:
         """
         self.image_data = pd.read_pickle(config.image_data_with_features_pkl(self.model_name))
         return self.image_data
+    
+    def get_image_index_file(self):
+        """
+        Returns the metadata file containing information about the indexed images.
+
+        Returns:
+        --------
+        DataFrame
+            The Panda DataFrame of the metadata file.
+        """
+        return faiss.read_index(config.image_features_vectors_idx(self.model_name))
