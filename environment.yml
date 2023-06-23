@@ -7,5 +7,3 @@ dependencies:
 - pip
 - pip:
   - DeepImageSearch
-variables:
-  PYTHONHASHSEED: 0

@@ -10,12 +10,8 @@ from torchvision import transforms
 import torch
 from torch.autograd import Variable
 import timm
-from PIL import ImageOps
-import math
 import faiss
 
-if hash("test") != 4418353137104490830:
-    raise ValueError("PYTHONHASHSEED must be set to 0")
 
 class Load_Data:
     """A class for loading data from single/multiple folders or a CSV file"""
@@ -133,7 +129,7 @@ class Search_Setup:
 
     def _start_feature_extraction(self):
         image_data = pd.DataFrame()
-        image_data['id'] = [hash(p) for p in self.image_list]
+        image_data['id'] = range(1, len(self.image_list) + 1)
         image_data['images_paths'] = self.image_list
         f_data = self._get_feature(self.image_list)
         image_data['features'] = f_data
@@ -185,6 +181,9 @@ class Search_Setup:
         self.image_data = pd.read_pickle(config.image_data_with_features_pkl(self.model_name))
         index = faiss.read_index(config.image_features_vectors_idx(self.model_name))
 
+        img_id = self.image_data['id'].max()
+        if pd.isna(img_id):
+            img_id = 0
         for new_image_path in tqdm(new_image_paths):
             # Extract features from the new image
             try:
@@ -195,7 +194,7 @@ class Search_Setup:
                 continue
 
             # Add the new image to the metadata
-            img_id = hash(new_image_path)
+            img_id += 1
             new_metadata = pd.DataFrame({"id": img_id, "images_paths": [new_image_path], "features": [feature]})
             #self.image_data = self.image_data.append(new_metadata, ignore_index=True)
             self.image_data = pd.concat([self.image_data, new_metadata], axis=0, ignore_index=True)
@@ -216,8 +215,7 @@ class Search_Setup:
         Parameters:
         -----------
         ids : list
-            A list of ids for the images to be removed. Currently these are hashes
-            of the filepath with PYTHONHASHSEED=0.
+            A list of ids for the images to be removed
         """
         image_data = self.get_image_metadata_file()
         index = self.get_image_index_file()
@@ -335,3 +333,4 @@ class Search_Setup:
             The Panda DataFrame of the metadata file.
         """
         return faiss.read_index(config.image_features_vectors_idx(self.model_name))
+    
